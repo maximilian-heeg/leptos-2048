@@ -21,6 +21,11 @@ body {
     font-family: "Clear Sans", "Helvetica Neue", Arial, sans-serif;
 }
 
+main {
+    margin-left: auto;
+    margin-right: auto;
+    width: 22.5rem;
+}
 div.score {
     width: 22.5rem;
     text-align: end;
@@ -33,12 +38,16 @@ div.controls {
     justify-content: space-between;
 }
 
-div.controls > button.space {
+div.controls.c-1 > button {
     width: 22.5rem;
 }
 
+div.controls.c-2 > button {
+    width: 11rem;
+}
+
 div.controls > button {
-    width: 5rem;
+    width: 5.25rem;
     height: 4rem;
     background: linear-gradient(
         to bottom,

@@ -4,6 +4,22 @@ use leptos::logging::log;
 use leptos::*;
 use leptos_hotkeys::use_hotkeys;
 use leptos_hotkeys::{provide_hotkeys_context, scopes, HotkeysContext};
+use leptos_use::use_raf_fn_with_options;
+use leptos_use::utils::Pausable;
+use leptos_use::UseRafFnOptions;
+
+fn handle_step(setter: WriteSignal<Game>, action: Actions) {
+    setter.update(|game| {
+        game.step(action);
+    });
+}
+
+fn handle_monte_carlo(getter: ReadSignal<Game>, setter: WriteSignal<Game>) {
+    let next_move = alg::monte_carlo(&getter.get());
+    if let Some(action) = next_move {
+        handle_step(setter, action)
+    };
+}
 
 #[component]
 pub fn RenderGame() -> impl IntoView {
@@ -12,25 +28,11 @@ pub fn RenderGame() -> impl IntoView {
 
     let (game, set_game) = create_signal(Game::new());
 
-    use_hotkeys!(("ArrowUp") => move |_| {
-        set_game.update(|game| {game.step(Actions::Up);});
-    });
-    use_hotkeys!(("ArrowDown") => move |_| {
-        set_game.update(|game| {game.step(Actions::Down);});
-    });
-    use_hotkeys!(("ArrowLeft") => move |_| {
-        set_game.update(|game| {game.step(Actions::Left);});
-    });
-    use_hotkeys!(("ArrowRight") => move |_| {
-        set_game.update(|game| {game.step(Actions::Right);});
-    });
-
-    use_hotkeys!(("Space") => move |_| {
-        let next_move = alg::monte_carlo(&game.get());
-        if let Some(next_move) = next_move {
-            set_game.update(|game| {game.step(next_move);});
-        }
-    });
+    use_hotkeys!(("ArrowUp") => move |_| handle_step(set_game, Actions::Up));
+    use_hotkeys!(("ArrowDown") => move |_| handle_step(set_game, Actions::Down));
+    use_hotkeys!(("ArrowLeft") =>  move |_| handle_step(set_game, Actions::Left));
+    use_hotkeys!(("ArrowRight") =>  move |_| handle_step(set_game, Actions::Right));
+    use_hotkeys!(("Space") => move |_| handle_monte_carlo(game, set_game));
 
     use_hotkeys!(("Keys") => move |_| {
         while !game().is_game_over(){
@@ -47,6 +49,7 @@ pub fn RenderGame() -> impl IntoView {
     provide_context(game);
     view! {
         <main _ref=main_ref>
+            <h1> 2048</h1>
             <div class="score">Score: {move || game().score}</div>
             <RenderBoard game=game/>
             <RenderControls />
@@ -126,37 +129,46 @@ fn BoardBackground() -> impl IntoView {
 fn RenderControls() -> impl IntoView {
     let setter = use_context::<WriteSignal<Game>>().expect("to have found the setter provided");
     let getter = use_context::<ReadSignal<Game>>().expect("to have found the setter provided");
+
+    let Pausable {
+        pause,
+        resume,
+        is_active,
+    } = use_raf_fn_with_options(
+        move |_| handle_monte_carlo(getter, setter),
+        UseRafFnOptions::default().immediate(false),
+    );
+
     view! {
         <div class="controls">
         <button
-            on:click=move |_| setter.update(|value|{ value.step(Actions::Left);})
+            on:click=move |_| handle_step(setter, Actions::Left)
             inner_html="&larr;"
         />
 
         <button
-            on:click=move |_| setter.update(|value|{ value.step(Actions::Right);})
+            on:click=move |_| handle_step(setter, Actions::Right)
             inner_html="&rarr;"
         />
         <button
-            on:click=move |_| setter.update(|value|{ value.step(Actions::Up);})
+            on:click=move |_| handle_step(setter, Actions::Up)
             inner_html="&uarr;"
         />
         <button
-            on:click=move |_| setter.update(|value|{ value.step(Actions::Down);})
+            on:click=move |_| handle_step(setter, Actions::Down)
             inner_html="&darr;"
        />
     </div>
-    <div class="controls">
-       <button class="space"
-           on:click=move |_| {
-               let next_move = alg::monte_carlo(&getter.get());
-               if let Some(next_move) = next_move {
-                   setter.update(|game| {game.step(next_move);});
-               }
-           }
+    <div class="controls c-1">
+       <button
+           on:click=move |_| handle_monte_carlo(getter, setter)
       >
       Monte Carlo Tree Search <br/> (Space)
       </button>
+    </div>
+    <div class="controls c-2">
+        <button on:click=move |_| resume()>start</button>
+        <button on:click=move |_| pause()>pause</button>
     </div>
     }
 }
