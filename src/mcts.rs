@@ -14,7 +14,7 @@ fn do_move(game: &mut Game, action: Actions) -> bool {
     }
 }
 
-pub fn monte_carlo(game: &Game) -> Option<Actions> {
+pub fn simlulation(game: &Game) -> Option<Actions> {
     let valid_actions = game.valid_moves();
 
     let mut scores = vec![];

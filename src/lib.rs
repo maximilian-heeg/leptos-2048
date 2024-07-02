@@ -1,3 +1,3 @@
-pub mod alg;
 pub mod game;
-pub mod render;
+pub mod mcts;
+pub mod ui;
