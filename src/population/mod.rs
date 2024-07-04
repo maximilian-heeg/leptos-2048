@@ -33,6 +33,17 @@ impl Population {
         }
     }
 
+    pub fn from_nn(n_agents: usize, nn: NeuralNetwork) -> Self {
+        let mut agents = vec![];
+        for _ in 0..n_agents {
+            agents.push(Agent::new(nn.clone(), Game::new()));
+        }
+        Self {
+            agents,
+            evolution_step: 0,
+        }
+    }
+
     pub fn play(&mut self, max_steps: usize) {
         let mut v = vec![0usize; 5];
         v.par_iter_mut().enumerate().for_each(|(i, x)| *x = i);

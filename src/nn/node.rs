@@ -1,7 +1,8 @@
 use rand::Rng;
+use serde::{Deserialize, Serialize};
 
 /// A single node (neuron) in a neural network layer.
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Node {
     pub weights: Vec<f64>,
     pub bias: f64,

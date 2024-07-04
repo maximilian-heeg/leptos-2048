@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 /// Computes the sigmoid activation function.
 pub fn sigmoid(x: f64) -> f64 {
     1.0 / (1.0 + (-x).exp())
@@ -18,7 +20,7 @@ pub fn tanh(x: f64) -> f64 {
 }
 
 /// Enumeration of possible activation functions.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Serialize, Deserialize)]
 pub enum ActivationFunction {
     Sigmoid,
     ReLU,

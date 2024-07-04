@@ -1,12 +1,15 @@
 pub mod activation;
 mod layer;
 mod node;
+use std::fs::File;
+use std::io::{self};
 
 use activation::ActivationFunction;
 use layer::Layer;
+use serde::{Deserialize, Serialize};
 
 /// A neural network consisting of multiple layers.
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct NeuralNetwork {
     pub layers: Vec<Layer>,
 }
@@ -69,12 +72,43 @@ impl NeuralNetwork {
             layer.update(rate, variation);
         }
     }
+
+    /// Saves the neural network to a file in JSON format.
+    ///
+    /// # Arguments
+    ///
+    /// * `filename` - The name of the file to save the neural network to.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` indicating success or failure.
+    pub fn save(&self, filename: &str) -> io::Result<()> {
+        let file = File::create(filename)?;
+        serde_json::to_writer(file, &self)?;
+        Ok(())
+    }
+
+    /// Loads a neural network from a file in JSON format.
+    ///
+    /// # Arguments
+    ///
+    /// * `filename` - The name of the file to load the neural network from.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing the loaded `NeuralNetwork` or an error.
+    pub fn load(filename: &str) -> io::Result<Self> {
+        let file = File::open(filename)?;
+        let network = serde_json::from_reader(file)?;
+        Ok(network)
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::activation::ActivationFunction;
     use super::*;
+    use std::fs;
 
     #[test]
     fn test_new_neural_network() {
@@ -113,5 +147,22 @@ mod tests {
 
         assert_eq!(outputs.len(), 1);
         assert!((outputs[0] - expected_final_output).abs() < 1e-6);
+    }
+
+    #[test]
+    fn test_save_and_load() {
+        let layer_sizes = vec![2, 3, 1];
+        let activation_functions = vec![ActivationFunction::ReLU, ActivationFunction::Sigmoid];
+        let network = NeuralNetwork::new(&layer_sizes, &activation_functions);
+
+        let filename = "test_model.json";
+        network.save(filename).expect("Failed to save the network");
+
+        let loaded_network = NeuralNetwork::load(filename).expect("Failed to load the network");
+
+        assert_eq!(network.layers.len(), loaded_network.layers.len());
+
+        // Clean up
+        fs::remove_file(filename).expect("Failed to remove test file");
     }
 }

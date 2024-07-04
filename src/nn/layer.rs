@@ -1,8 +1,9 @@
 use super::activation::ActivationFunction;
 use super::node::Node;
+use serde::{Deserialize, Serialize};
 
 /// A layer in a neural network, consisting of multiple nodes.
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Layer {
     pub nodes: Vec<Node>,
     pub activation_function: ActivationFunction,

@@ -14,5 +14,6 @@ leptos_hotkeys = "0.2.1"
 rand = "0.8.5"
 rayon = "1.10.0"
 serde = { version = "1.0.203", features = ["derive"] }
+serde_json = "1.0.120"
 strum = "0.26.3"
 strum_macros = "0.26.4"
