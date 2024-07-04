@@ -6,6 +6,7 @@ use strum::IntoEnumIterator;
 use strum_macros::{EnumCount as EnumCountMacro, EnumIter};
 
 const SIZE: usize = 4;
+const MAX_EXPONENT: usize = 17; // log2(131,072) is 17
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Tile {
@@ -42,14 +43,14 @@ pub enum Actions {
     Down,
 }
 
-impl TryFrom<u32> for Actions {
+impl TryFrom<usize> for Actions {
     type Error = ();
-    fn try_from(v: u32) -> Result<Self, Self::Error> {
+    fn try_from(v: usize) -> Result<Self, Self::Error> {
         match v {
-            x if x == Actions::Left as u32 => Ok(Actions::Left),
-            x if x == Actions::Right as u32 => Ok(Actions::Right),
-            x if x == Actions::Up as u32 => Ok(Actions::Up),
-            x if x == Actions::Down as u32 => Ok(Actions::Down),
+            x if x == Actions::Left as usize => Ok(Actions::Left),
+            x if x == Actions::Right as usize => Ok(Actions::Right),
+            x if x == Actions::Up as usize => Ok(Actions::Up),
+            x if x == Actions::Down as usize => Ok(Actions::Down),
             _ => Err(()),
         }
     }
@@ -251,16 +252,27 @@ impl Game {
         true
     }
 
-    pub fn flatten(&self) -> Vec<u32> {
-        let res: Vec<u32> = self
+    pub fn flatten(&self) -> Vec<f64> {
+        let res: Vec<f64> = self
             .board
             .into_iter()
-            .flat_map(|row| row.into_iter().map(|tile| tile.value))
+            .flat_map(|row| row.into_iter().map(|tile| tile.value as f64))
             .collect();
         res
     }
 
-    pub fn reset(&mut self) -> Vec<u32> {
+    pub fn one_hot_encode_board(&self) -> Vec<f64> {
+        let mut encoded = vec![0.0; SIZE * SIZE * MAX_EXPONENT];
+        for (i, &tile) in self.board.iter().flatten().enumerate() {
+            let tile = tile.value as usize;
+            if tile != 0 {
+                encoded[i * MAX_EXPONENT + tile] = 1.0;
+            }
+        }
+        encoded
+    }
+
+    pub fn reset(&mut self) -> Vec<f64> {
         self.board = [[Tile::new(0, 0); SIZE]; SIZE];
         self.score = 0;
         self.moves = 0;
@@ -273,6 +285,8 @@ impl Game {
 
 #[cfg(test)]
 mod tests {
+    use crate::game::{MAX_EXPONENT, SIZE};
+
     use super::Game;
     use super::Tile;
 
@@ -341,6 +355,20 @@ mod tests {
         let game = test_game();
         let flat = game.flatten();
         assert_eq!(flat.len(), 16);
-        assert_eq!(flat, (0..16).into_iter().collect::<Vec<u32>>())
+        assert_eq!(
+            flat,
+            (0..16).into_iter().map(|x| x as f64).collect::<Vec<f64>>()
+        )
+    }
+
+    #[test]
+    fn encoding() {
+        let game = test_game();
+        let encoding = game.one_hot_encode_board();
+        assert_eq!(encoding.len(), SIZE * SIZE * MAX_EXPONENT);
+        assert_eq!(encoding[0], 0.0);
+        assert_eq!(encoding[MAX_EXPONENT + 1], 1.0);
+        assert_eq!(encoding[MAX_EXPONENT * 4 + 4], 1.0);
+        assert_eq!(encoding[MAX_EXPONENT * 15 + 15], 1.0);
     }
 }

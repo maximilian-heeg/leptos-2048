@@ -8,7 +8,7 @@ use leptos_use::UseRafFnOptions;
 #[component]
 pub fn RenderControls() -> impl IntoView {
     let setter = use_context::<WriteSignal<Game>>().expect("to have found the setter provided");
-    let getter = use_context::<ReadSignal<Game>>().expect("to have found the setter provided");
+    let getter = use_context::<ReadSignal<Game>>().expect("to have found the getter provided");
 
     let Pausable {
         pause,
